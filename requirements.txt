@@ -1,0 +1,19 @@
+# Core
+flask==3.1.3
+flask-cors==6.0.2
+flask-sqlalchemy==3.1.1
+flask-migrate==4.1.0
+flask-jwt-extended==4.7.1
+flask-limiter==3.12
+flask-marshmallow==1.3.0
+marshmallow==3.25.1
+marshmallow-sqlalchemy==1.4.0
+gunicorn==23.0.0
+requests==2.32.3
+python-dotenv==1.1.0
+
+# Observability (optional - app runs without it)
+# prometheus-flask-instrumentator==7.0.2
+
+# API Docs (optional - app runs without it)
+# flask-swagger-ui==4.11.1

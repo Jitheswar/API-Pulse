@@ -1,0 +1,264 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Pulse",
+    "description": "API Testing & Monitoring Platform",
+    "version": "1.0.0"
+  },
+  "servers": [{"url": "/", "description": "Current server"}],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [{"BearerAuth": []}],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password"],
+                "properties": {
+                  "username": {"type": "string", "minLength": 3, "maxLength": 80},
+                  "email": {"type": "string", "format": "email"},
+                  "password": {"type": "string", "minLength": 8}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "User created"},
+          "409": {"description": "Username or email already exists"}
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login and get JWT tokens",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": {"type": "string"},
+                  "password": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Login successful, returns access_token and refresh_token"},
+          "401": {"description": "Invalid credentials"}
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "responses": {"200": {"description": "New access token"}}
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user info",
+        "responses": {"200": {"description": "User details"}}
+      }
+    },
+    "/api/test": {
+      "post": {
+        "tags": ["Testing"],
+        "summary": "Execute an API test",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": {"type": "string"},
+                  "method": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"], "default": "GET"},
+                  "headers": {"type": "object"},
+                  "body": {"type": "string"},
+                  "collection": {"type": "string", "default": "Default"},
+                  "timeout": {"type": "integer", "default": 30, "minimum": 1, "maximum": 120},
+                  "environment_id": {"type": "integer", "nullable": true}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Test result with status, timing, and response data"},
+          "403": {"description": "SSRF protection blocked the request"}
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "tags": ["History"],
+        "summary": "Get paginated test history",
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer", "default": 50, "maximum": 200}},
+          {"name": "url", "in": "query", "schema": {"type": "string"}, "description": "Filter by URL substring"},
+          {"name": "collection", "in": "query", "schema": {"type": "string"}, "description": "Filter by collection name"}
+        ],
+        "responses": {"200": {"description": "Paginated history with items, page, total, has_next, has_prev"}}
+      },
+      "delete": {
+        "tags": ["History"],
+        "summary": "Clear all history (admin only)",
+        "responses": {"200": {"description": "History cleared"}, "403": {"description": "Admin access required"}}
+      }
+    },
+    "/api/history/{test_id}": {
+      "get": {
+        "tags": ["History"],
+        "summary": "Get test details",
+        "parameters": [{"name": "test_id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Full test details with request/response bodies"}}
+      },
+      "delete": {
+        "tags": ["History"],
+        "summary": "Delete a test",
+        "parameters": [{"name": "test_id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Test deleted"}}
+      }
+    },
+    "/api/analytics/performance": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Get response time data",
+        "parameters": [
+          {"name": "url", "in": "query", "schema": {"type": "string"}},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 50}}
+        ],
+        "responses": {"200": {"description": "Array of performance data points"}}
+      }
+    },
+    "/api/analytics/summary": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Get aggregate stats per URL",
+        "responses": {"200": {"description": "Array of URL summary stats"}}
+      }
+    },
+    "/api/analytics/slow": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Get slow APIs",
+        "parameters": [{"name": "threshold", "in": "query", "schema": {"type": "number", "default": 1000}}],
+        "responses": {"200": {"description": "Array of slow API stats"}}
+      }
+    },
+    "/api/analytics/compare": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Compare API performance across runs",
+        "parameters": [{"name": "url", "in": "query", "required": true, "schema": {"type": "array", "items": {"type": "string"}}}],
+        "responses": {"200": {"description": "Comparison data with runs and stats per URL"}}
+      }
+    },
+    "/api/thresholds": {
+      "get": {
+        "tags": ["Thresholds"],
+        "summary": "List all thresholds",
+        "responses": {"200": {"description": "Array of threshold objects"}}
+      },
+      "post": {
+        "tags": ["Thresholds"],
+        "summary": "Create or update a threshold",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url_pattern", "max_response_time_ms"],
+                "properties": {
+                  "url_pattern": {"type": "string"},
+                  "max_response_time_ms": {"type": "number", "minimum": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {"200": {"description": "Threshold saved"}}
+      }
+    },
+    "/api/thresholds/{tid}": {
+      "delete": {
+        "tags": ["Thresholds"],
+        "summary": "Delete a threshold",
+        "parameters": [{"name": "tid", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Threshold deleted"}}
+      }
+    },
+    "/api/environments": {
+      "get": {
+        "tags": ["Environments"],
+        "summary": "List all environments",
+        "responses": {"200": {"description": "Array of environment objects with variables"}}
+      },
+      "post": {
+        "tags": ["Environments"],
+        "summary": "Create or update an environment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "variables"],
+                "properties": {
+                  "name": {"type": "string"},
+                  "variables": {"type": "object", "additionalProperties": {"type": "string"}}
+                }
+              }
+            }
+          }
+        },
+        "responses": {"201": {"description": "Environment created"}}
+      }
+    },
+    "/api/collections": {
+      "get": {
+        "tags": ["Collections"],
+        "summary": "List distinct collection names",
+        "responses": {"200": {"description": "Array of collection name strings"}}
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": {"description": "Healthy"},
+          "503": {"description": "Unhealthy — database error"}
+        }
+      }
+    }
+  }
+}

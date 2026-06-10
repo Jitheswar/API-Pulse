@@ -15,3 +15,22 @@ htmlcov/
 migrations/
 instance/
 *.log
+
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if any frontend added)
+node_modules/
+.next/
+
+# Environment variants
+.env.local
+.env.*.local

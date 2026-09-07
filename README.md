@@ -5,6 +5,7 @@ A full-stack API testing and monitoring tool built with Flask. Test any HTTP end
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Flask](https://img.shields.io/badge/Flask-3.1-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+[![tests](https://github.com/Jitheswar/API-Pulse/actions/workflows/tests.yml/badge.svg)](https://github.com/Jitheswar/API-Pulse/actions/workflows/tests.yml)
 
 ---
 

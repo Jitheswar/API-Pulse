@@ -121,4 +121,3 @@ Any VPS: `docker-compose up -d --build`.
 ## License
 
 MIT
-MIT

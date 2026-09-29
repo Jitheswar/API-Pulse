@@ -1,150 +1,86 @@
 # API Pulse
 
-A full-stack API testing and monitoring tool built with Flask. Test any HTTP endpoint, track response times, set performance thresholds, and visualize analytics — all from a futuristic neon-themed dashboard.
+A dashboard for testing HTTP endpoints and watching how they perform. Send a request, see the status and response time, and get flagged when an endpoint is slower than you allow.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Flask](https://img.shields.io/badge/Flask-3.1-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 [![tests](https://github.com/Jitheswar/API-Pulse/actions/workflows/tests.yml/badge.svg)](https://github.com/Jitheswar/API-Pulse/actions/workflows/tests.yml)
 
----
+## What you can do
 
-## Features
+- Send GET, POST, PUT, PATCH and DELETE requests with your own headers, body and query params
+- See status code, response time, size and body for every run
+- Set a response-time limit per URL and get flagged when it's exceeded
+- Compare runs over time and find slow endpoints
+- Group tests into collections
+- Keep variable sets (dev, staging, prod) and use `{{variable}}` in URLs, headers and bodies
+- Search and filter your full run history
+- Register and log in with JWT. The first user to register becomes admin.
+- Rate limiting, plus blocking of requests to private IP ranges (SSRF protection)
 
-- **API Testing** — Send GET, POST, PUT, PATCH, DELETE requests with custom headers, body, and query params
-- **Response Monitoring** — Track status codes, response times, content length, and response bodies
-- **Performance Analytics** — Aggregated stats, slow endpoint detection, and run-over-run comparison
-- **Threshold Alerts** — Set per-URL response time thresholds and get flagged when they're breached
-- **Collections** — Group related API tests for organized workflows
-- **Environments** — Define variable sets (dev, staging, prod) with `{{variable}}` interpolation in URLs, headers, and bodies
-- **History** — Full searchable log of every test run with filtering and bulk delete
-- **JWT Authentication** — Register/login flow with access + refresh tokens and role-based admin controls
-- **Rate Limiting** — Configurable per-endpoint rate limits (memory or Redis-backed)
-- **SSRF Protection** — Blocks requests to private/internal IP ranges
-- **CORS Support** — Configurable allowed origins
-- **Docker Ready** — Multi-stage Dockerfile + docker-compose with PostgreSQL and Redis
-- **One-Click Deploy** — Render.com and Heroku configs included
+## Run it
 
----
-
-## Tech Stack
-
-| Layer       | Technology                                              |
-|-------------|---------------------------------------------------------|
-| Backend     | Flask, SQLAlchemy, Flask-Migrate, Flask-JWT-Extended     |
-| Database    | SQLite (dev) / PostgreSQL (prod)                        |
-| Caching     | Redis (prod rate limiting)                              |
-| Frontend    | Vanilla JS, CSS3 with glassmorphism + particle effects  |
-| Serialization | Marshmallow                                           |
-| Server      | Gunicorn (prod), Flask dev server (dev)                 |
-| Containerization | Docker, docker-compose                             |
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.10+ (3.12 recommended)
-- pip
-
-### Run with one command
+You need Python 3.10 or newer (3.12 recommended).
 
 ```bash
 chmod +x start.sh
 ./start.sh
 ```
 
-This will:
-1. Create a Python virtual environment
-2. Install all dependencies
-3. Start the Flask development server on `http://localhost:5000`
+That creates a virtual environment, installs the dependencies and starts the app at http://localhost:5000.
 
-### Manual Setup
+Or do it by hand:
 
 ```bash
-# Create and activate virtual environment
 python3 -m venv venv
 source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# (Optional) Copy and edit environment variables
-cp .env.example .env
-
-# Run the development server
+cp .env.example .env    # optional
 python run.py
 ```
 
-The app runs at **http://localhost:5000** by default.
+Open the app, register an account, paste a URL (for example `https://jsonplaceholder.typicode.com/posts`) and hit **Send**. Results show up in the History and Analytics tabs.
 
----
-
-## Docker Setup
-
-### Using docker-compose (recommended for production-like setup)
+## Docker
 
 ```bash
 docker-compose up --build
 ```
 
-This starts three services:
-- **app** — Flask application on port 5000
-- **db** — PostgreSQL 16 on port 5432
-- **redis** — Redis 7 on port 6379
+This starts the app on port 5000, PostgreSQL on 5432 and Redis on 6379.
 
-### Standalone Docker
+## Settings
 
-```bash
-docker build -t api-pulse .
-docker run -p 5000:5000 \
-  -e SECRET_KEY=your-secret \
-  -e JWT_SECRET_KEY=your-jwt-secret \
-  -e DATABASE_URL=sqlite:///api_monitor.db \
-  api-pulse
-```
+Set these as environment variables. `.env.example` has the full list.
 
----
-
-## Configuration
-
-All configuration is via environment variables. See `.env.example` for the full list:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable | Default | What it does |
+|---|---|---|
 | `FLASK_ENV` | `development` | `development` or `production` |
 | `SECRET_KEY` | dev fallback | Flask secret key |
 | `JWT_SECRET_KEY` | dev fallback | JWT signing key |
 | `DATABASE_URL` | `sqlite:///api_monitor.db` | Database connection string |
-| `RATELIMIT_STORAGE_URI` | `memory://` | Rate limiter backend (`redis://` for prod) |
+| `RATELIMIT_STORAGE_URI` | `memory://` | Use `redis://` in production |
 | `CORS_ORIGINS` | `*` | Comma-separated allowed origins |
 | `PORT` | `5000` | Server port |
 
----
+## API
 
-## API Endpoints
+Every route needs a JWT except register, login and `/health`.
 
-All API routes require JWT authentication unless noted.
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /api/auth/register`, `/login`, `/refresh`, `GET /api/auth/me` |
+| Run a test | `POST /api/test` |
+| History | `GET /api/history`, `GET` or `DELETE /api/history/:id`, `DELETE /api/history` |
+| Analytics | `GET /api/analytics/performance`, `/summary`, `/slow`, `/compare` |
+| Thresholds | `GET` or `POST /api/thresholds`, `DELETE /api/thresholds/:id` |
+| Collections | `GET /api/collections` |
+| Environments | `GET` or `POST /api/environments`, `PUT` or `DELETE /api/environments/:id`, `POST /api/environments/resolve` |
+| Health | `GET /health` |
 
-### Authentication (`/api/auth`)
+Example body for `POST /api/test`:
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/register` | Create a new account | No |
-| POST | `/api/auth/login` | Get access + refresh tokens | No |
-| POST | `/api/auth/refresh` | Refresh access token | Refresh token |
-| GET | `/api/auth/me` | Get current user profile | Yes |
-
-> The first registered user automatically receives the `admin` role.
-
-### API Testing (`/api`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/test` | Execute an API test |
-
-**Request body:**
 ```json
 {
   "url": "https://api.example.com/users",
@@ -156,111 +92,7 @@ All API routes require JWT authentication unless noted.
 }
 ```
 
-### History (`/api/history`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/history` | List test history (paginated, filterable) |
-| GET | `/api/history/:id` | Get single test result |
-| DELETE | `/api/history/:id` | Delete a test result |
-| DELETE | `/api/history` | Bulk delete test results |
-
-### Analytics (`/api/analytics`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/analytics/performance` | Aggregated performance metrics |
-| GET | `/api/analytics/summary` | Dashboard summary stats |
-| GET | `/api/analytics/slow` | Slow endpoints report |
-| GET | `/api/analytics/compare` | Compare runs over time |
-
-### Thresholds (`/api/thresholds`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/thresholds` | List all thresholds |
-| POST | `/api/thresholds` | Create a response time threshold |
-| DELETE | `/api/thresholds/:id` | Delete a threshold |
-
-### Collections (`/api/collections`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/collections` | List grouped test collections |
-
-### Environments (`/api/environments`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/environments` | List environments |
-| POST | `/api/environments` | Create environment |
-| PUT | `/api/environments/:id` | Update environment |
-| DELETE | `/api/environments/:id` | Delete environment |
-| POST | `/api/environments/resolve` | Resolve `{{variables}}` in a string |
-
-### Health (`/health`)
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/health` | Health check (app + database) | No |
-
----
-
-## Project Structure
-
-```
-CisHackathon/
-├── app/
-│   ├── __init__.py           # Flask app factory (create_app)
-│   ├── config.py             # Dev / Prod / Test configurations
-│   ├── extensions.py         # SQLAlchemy, JWT, CORS, Limiter instances
-│   ├── models/
-│   │   ├── user.py           # User model (auth, roles)
-│   │   ├── api_test.py       # ApiTest model (test results)
-│   │   ├── threshold.py      # Threshold model (perf limits)
-│   │   └── environment.py    # Environment model (variable sets)
-│   ├── routes/
-│   │   ├── auth.py           # Register, login, refresh, profile
-│   │   ├── testing.py        # Execute API tests
-│   │   ├── history.py        # Test history CRUD
-│   │   ├── analytics.py      # Performance analytics
-│   │   ├── thresholds.py     # Threshold management
-│   │   ├── collections.py    # Test collections
-│   │   ├── environments.py   # Environment variables
-│   │   └── health.py         # Health check endpoint
-│   ├── services/
-│   │   └── api_tester.py     # HTTP request execution + SSRF protection
-│   ├── middleware/
-│   │   └── error_handlers.py # Global error handlers
-│   └── utils/
-│       └── validation.py     # Marshmallow request schemas
-├── templates/
-│   └── index.html            # Dashboard SPA template
-├── static/
-│   ├── css/style.css         # Glassmorphism + neon theme
-│   └── js/app.js             # Dashboard logic + particle effects
-├── tests/                    # Pytest test suite
-│   ├── conftest.py           # Test fixtures (app, client, auth headers)
-│   ├── test_auth.py
-│   ├── test_testing.py
-│   ├── test_history.py
-│   ├── test_analytics.py
-│   ├── test_thresholds.py
-│   ├── test_environments.py
-│   └── test_health.py
-├── run.py                    # Entry point
-├── start.sh                  # One-command dev setup + run
-├── requirements.txt          # Python dependencies
-├── .env.example              # Environment variable template
-├── Dockerfile                # Multi-stage production build
-├── docker-compose.yml        # Full stack (app + PostgreSQL + Redis)
-├── Procfile                  # Heroku deployment
-└── render.yaml               # Render.com deployment
-```
-
----
-
-## Running Tests
+## Tests
 
 ```bash
 source venv/bin/activate
@@ -268,20 +100,13 @@ pip install pytest
 pytest tests/ -v
 ```
 
-Tests use an in-memory SQLite database and require no external services.
+Tests use an in-memory SQLite database and need no other services.
 
----
+## Deploying
 
-## Deployment
+Render: connect the repo and it picks up `render.yaml`. Set `DATABASE_URL` to a managed PostgreSQL instance.
 
-### Render.com
-
-1. Push to a GitHub repository
-2. Connect the repo on [render.com](https://render.com)
-3. Render will auto-detect `render.yaml` and configure the service
-4. Set `DATABASE_URL` to a managed PostgreSQL instance
-
-### Heroku
+Heroku:
 
 ```bash
 heroku create api-pulse
@@ -291,24 +116,9 @@ heroku config:set JWT_SECRET_KEY=$(openssl rand -hex 32)
 git push heroku main
 ```
 
-### Docker (any VPS)
-
-```bash
-docker-compose up -d --build
-```
-
----
-
-## Getting Started (First Use)
-
-1. Open `http://localhost:5000` in your browser
-2. Click **Register** and create an account (first user gets admin role)
-3. Log in with your credentials
-4. Enter a URL (e.g., `https://jsonplaceholder.typicode.com/posts`) and click **Send**
-5. View results in the History and Analytics tabs
-
----
+Any VPS: `docker-compose up -d --build`.
 
 ## License
 
+MIT
 MIT
